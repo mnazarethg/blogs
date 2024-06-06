@@ -23,9 +23,11 @@ describe('favorite blog', () => {
 	]
 
 const maxLikes = Math.max(...listBlogs.map(blog => blog.likes));
+const favorite = listBlogs.find(blog => blog.likes === maxLikes);
 
 test('the highest number of likes from the list of blogs', () => {
 	const result = listHelper.favoriteBlog(listBlogs)
-	assert.deepStrictEqual(result, maxLikes)
+	assert.deepStrictEqual(result, favorite)
+	console.log(favorite)
 })
 })
