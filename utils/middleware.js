@@ -24,12 +24,23 @@ const errorHandler = (error, request, response, next) => {
   } else if (error.name ===  'JsonWebTokenError') {
     return response.status(400).json({ error: 'token missing or invalid' })
   }
-
   next(error)
 }
+
+const tokenExtractor = (request, response, next) => {
+  const authorization = request.headers.authorization
+  if (authorization && authorization.startsWith('Bearer ')) {
+    const token = authorization.replace('Bearer ', '');
+    request.token = token;
+  } else {
+   request.token = null;
+  }
+  next()
+};
 
 module.exports = {
   requestLogger,
   unknownEndpoint,
-  errorHandler
+  errorHandler,
+  tokenExtractor
 }
