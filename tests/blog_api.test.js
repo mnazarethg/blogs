@@ -10,11 +10,18 @@ const helper = require('./test_helper')
 const User = require('../models/user')
 const Blog = require('../models/blog')
 
+let token;
+
 beforeEach(async () => {
   await Blog.deleteMany({})
-
   await Blog.insertMany(helper.initialBlogs)
-})
+
+  const response = await api
+    .post('/api/login')
+    .send({ username: 'testuser', password: 'testpassword' });
+
+  token = response.body.token;
+  });
 
 describe('PUT /api/blogs/:id', () => {
   test('successfully updates the number of likes for a blog post', async () => {
@@ -30,6 +37,7 @@ describe('PUT /api/blogs/:id', () => {
 
     await api
       .put(`/api/blogs/${savedBlog._id}`)
+      .set('Authorization', `Bearer ${token}`)
       .send(updatedLikes)
       .expect(200)
       .expect('Content-Type', /application\/json/);
@@ -41,6 +49,7 @@ describe('PUT /api/blogs/:id', () => {
 test('blogs are returned as json', async () => {
   await api
     .get('/api/blogs')
+    .set('Authorization', `Bearer ${token}`)
     .expect(200)
     .expect('Content-Type', /application\/json/)
 })
@@ -55,6 +64,7 @@ test('a valid blog can be added ', async () => {
 
   await api
     .post('/api/blogs')
+    .set('Authorization', `Bearer ${token}`)
     .send(newBlog)
     .expect(201)
     .expect('Content-Type', /application\/json/);
@@ -74,14 +84,15 @@ test('blog without likes is added with 0 likes', async () => {
   };
 
   await api
-  .post('/api/blogs')
-  .send(newBlog)
-  .expect(201)
-  .expect('Content-Type', /application\/json/);
+    .post('/api/blogs')
+    .set('Authorization', `Bearer ${token}`)
+    .send(newBlog)
+    .expect(201)
+    .expect('Content-Type', /application\/json/);
 
-const blogsAfterPost = await api.get('/api/blogs');
-const addedBlog = blogsAfterPost.body.find(blog => blog.title === 'Blog Without Likes');
-assert.strictEqual(addedBlog.likes, 0);
+  const blogsAfterPost = await api.get('/api/blogs');
+  const addedBlog = blogsAfterPost.body.find(blog => blog.title === 'Blog Without Likes');
+  assert.strictEqual(addedBlog.likes, 0);
 });
 
 test('blog without title or url is not added and returns status 400', async () => {
@@ -99,11 +110,13 @@ test('blog without title or url is not added and returns status 400', async () =
 
   await api
     .post('/api/blogs')
+    .set('Authorization', `Bearer ${token}`)
     .send(newBlogWithoutTitle)
     .expect(400);
 
   await api
     .post('/api/blogs')
+    .set('Authorization', `Bearer ${token}`)
     .send(newBlogWithoutUrl)
     .expect(400);
 });
@@ -144,6 +157,7 @@ describe('when there is initially one user at db', () => {
 
     await api
       .post('/api/users')
+      .set('Authorization', `Bearer ${token}`)
       .send(newUser)
       .expect(201)
       .expect('Content-Type', /application\/json/)
@@ -166,6 +180,7 @@ describe('when there is initially one user at db', () => {
 
     const result = await api
       .post('/api/users')
+      .set('Authorization', `Bearer ${token}`)
       .send(newUser)
       .expect(400)
       .expect('Content-Type', /application\/json/)
