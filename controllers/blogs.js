@@ -31,21 +31,15 @@ blogsRouter.post('/', async (request, response) => {
 });
 
 blogsRouter.delete('/:id', async (request, response) => {
-  const user = request.user
-  try {
-    console.log('Deleting blog with ID:', request.params.id);
-    const result = await Blog.findByIdAndDelete(request.params.id);
-    if (!result) {
-      console.log('No blog found with that ID');
-      return response.status(404).json({ error: 'Blog not found' });
-    }
-    console.log('Blog deleted successfully');
-    response.status(204).send();
-  } catch (error) {
-    console.log('Error during deletion:', error);
-    response.status(400).json({ error: error.message });
+  const decodedToken = jwt.verify(request.token, process.env.SECRET)
+  const blog = await Blog.findById(request.params.id)
+  if (decodedToken.id !== blog.user.toString()) {
+    return response.status(401).json({ error: 'token not permition' })
   }
-});
+  await Blog.findByIdAndDelete(request.params.id)
+  response.status(204).end()
+})
+  
 
 blogsRouter.put('/:id', async (request, response) => {
   const { likes } = request.body;
@@ -62,7 +56,7 @@ blogsRouter.put('/:id', async (request, response) => {
 
 blogsRouter.get('/:id', async (request, response) => {
   const blog = await Blog.findById(request.params.id)
-  if (blog.user.toString() === userid.toString()) {
+  if (blog) {
     response.json(blog)
   } else {
     response.status(404).end()
